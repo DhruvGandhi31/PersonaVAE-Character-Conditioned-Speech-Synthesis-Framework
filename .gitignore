@@ -1,0 +1,6 @@
+.vscode
+z_venv/
+data/zhongli_en/
+data/bad_data
+data/clean_v1/
+data/extract_voice.py
