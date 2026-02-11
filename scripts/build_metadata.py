@@ -6,9 +6,22 @@ METADATA_PATH = os.path.join(DATA_DIR, "metadata.csv")
 
 def clean_text(text):
     text = text.strip()
+
+    # Sometimes the characters might use "..." or ".." to indicate pauses. 
+    # Replace them with commas for better TTS processing.
+    text = text.replace("...", ",")
+    text = text.replace("..", ",")
+
+    text = re.sub(r',+', ',', text)
+
     text = re.sub(r'\s+', ' ', text)
+
     text = text.replace('"', '')
+    text = text.replace("'", '')
+    text = text.replace("#", '')
+
     return text
+
 
 def main():
     entries = []
