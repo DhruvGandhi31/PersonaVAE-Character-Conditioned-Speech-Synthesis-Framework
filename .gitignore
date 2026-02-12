@@ -1,5 +1,6 @@
 .vscode
 z_venv/
+data/
 data/zhongli_en/
 data/bad_data
 data/clean_v1/
