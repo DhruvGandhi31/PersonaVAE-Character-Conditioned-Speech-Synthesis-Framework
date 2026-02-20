@@ -31,11 +31,11 @@ if __name__ == "__main__":
 
     #train
     csv_file_path = "data/clean_v1/metadata_train.csv"
-    txt_file_path = os.path.join(BASE_DIR, "metadata_train.txt")
+    txt_file_path = os.path.join(BASE_DIR, "zhongli_train.txt")
     convert_csv_to_txt(csv_file_path, txt_file_path)
 
     #val
     csv_file_path = "data/clean_v1/metadata_val.csv" 
-    txt_file_path = os.path.join(BASE_DIR, "metadata_val.txt")
+    txt_file_path = os.path.join(BASE_DIR, "zhongli_val.txt")
     convert_csv_to_txt(csv_file_path, txt_file_path)
     
