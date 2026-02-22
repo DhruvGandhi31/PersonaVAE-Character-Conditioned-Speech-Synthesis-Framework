@@ -8,3 +8,4 @@ numpy
 Cython==0.29.21
 phonemizer==2.2.1
 Unidecode==1.1.1
+matplotlib

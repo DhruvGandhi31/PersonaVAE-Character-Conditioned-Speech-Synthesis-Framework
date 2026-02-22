@@ -9,3 +9,11 @@ extensions = [
         include_dirs=[numpy.get_include()],
     )
 ]
+
+setup(
+    name="monotonic_align",
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives={"language_level": "3"}  # important for modern Python
+    ),
+)
