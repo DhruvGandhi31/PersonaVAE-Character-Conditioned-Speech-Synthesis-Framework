@@ -12,7 +12,9 @@ from torch.utils.tensorboard import SummaryWriter
 # import torch.multiprocessing as mp
 # import torch.distributed as dist
 # from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
+
+from tqdm import tqdm
 
 import commons
 import utils
@@ -33,6 +35,13 @@ from losses import (
 )
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from txt_clean.symbols import symbols
+
+import warnings
+
+# Suppress all warnings (FutureWarning, UserWarning, etc.)
+warnings.filterwarnings("ignore")
+import logging
+logging.getLogger('numba').setLevel(logging.WARNING)
 
 
 torch.backends.cudnn.benchmark = True
@@ -155,7 +164,8 @@ def train_and_evaluate(device, rank, epoch, hps, nets, optims, schedulers, scale
 
   net_g.train()
   net_d.train()
-  for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths) in enumerate(train_loader):
+  #added tqdm
+  for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths) in enumerate(tqdm(train_loader, desc=f"Epoch {epoch}", ncols=100)):
     # For Distributed training, add rank as attribute to the tensors. like x.cuda(rank, non_blocking=True) do it for each
     # x, x_lengths = x.cuda(non_blocking=True), x_lengths.cuda(non_blocking=True)
     # spec, spec_lengths = spec.cuda(non_blocking=True), spec_lengths.cuda(non_blocking=True)
@@ -165,7 +175,7 @@ def train_and_evaluate(device, rank, epoch, hps, nets, optims, schedulers, scale
     spec, spec_lengths = spec.to(device, non_blocking=True), spec_lengths.to(device, non_blocking=True)
     y, y_lengths = y.to(device, non_blocking=True), y_lengths.to(device, non_blocking=True)
 
-    with autocast(enabled=hps.train.fp16_run):
+    with autocast(device_type="cuda", enabled=hps.train.fp16_run):
       y_hat, l_length, attn, ids_slice, x_mask, z_mask,\
       (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, x_lengths, spec, spec_lengths)
 
@@ -176,6 +186,14 @@ def train_and_evaluate(device, rank, epoch, hps, nets, optims, schedulers, scale
           hps.data.sampling_rate,
           hps.data.mel_fmin, 
           hps.data.mel_fmax)
+      
+
+      y = commons.slice_segments(y, ids_slice * hps.data.hop_length, hps.train.segment_size) # slice 
+      # Ensure tensors match lengths
+      min_len = min(y.size(-1), y_hat.size(-1))
+      y = y[:, :, :min_len]
+      y_hat = y_hat[:, :, :min_len]
+
       y_mel = commons.slice_segments(mel, ids_slice, hps.train.segment_size // hps.data.hop_length)
       y_hat_mel = mel_spectrogram_torch(
           y_hat.squeeze(1), 
@@ -188,11 +206,14 @@ def train_and_evaluate(device, rank, epoch, hps, nets, optims, schedulers, scale
           hps.data.mel_fmax
       )
 
-      y = commons.slice_segments(y, ids_slice * hps.data.hop_length, hps.train.segment_size) # slice 
+      # Ensure mel lengths match
+      min_mel_len = min(y_mel.size(-2), y_hat_mel.size(-2))
+      y_mel = y_mel[:, :, :min_mel_len]
+      y_hat_mel = y_hat_mel[:, :, :min_mel_len]
 
       # Discriminator
       y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
-      with autocast(enabled=False):
+      with autocast(device_type="cuda", enabled=False):
         loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
         loss_disc_all = loss_disc
     optim_d.zero_grad()
@@ -201,10 +222,10 @@ def train_and_evaluate(device, rank, epoch, hps, nets, optims, schedulers, scale
     grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
     scaler.step(optim_d)
 
-    with autocast(enabled=hps.train.fp16_run):
+    with autocast(device_type="cuda", enabled=hps.train.fp16_run):
       # Generator
       y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
-      with autocast(enabled=False):
+      with autocast(device_type="cuda", enabled=False):
         loss_dur = torch.sum(l_length.float())
         loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
         loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
@@ -234,16 +255,17 @@ def train_and_evaluate(device, rank, epoch, hps, nets, optims, schedulers, scale
         scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
         scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
         scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
-        image_dict = { 
-            "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
-            "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()), 
-            "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy()),
-            "all/attn": utils.plot_alignment_to_numpy(attn[0,0].data.cpu().numpy())
-        }
+        # I don't log images at every step to save disk space and reduce overhead. You can log them at a lower frequency, like every 100 steps or every epoch.
+        # image_dict = { 
+        #     "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
+        #     "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()), 
+        #     "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy()),
+        #     "all/attn": utils.plot_alignment_to_numpy(attn[0,0].data.cpu().numpy())
+        # }
         utils.summarize(
           writer=writer,
           global_step=global_step, 
-          images=image_dict,
+          # images=image_dict,
           scalars=scalar_dict)
 
       if global_step % hps.train.eval_interval == 0:
@@ -259,7 +281,7 @@ def train_and_evaluate(device, rank, epoch, hps, nets, optims, schedulers, scale
 def evaluate(device, hps, generator, eval_loader, writer_eval):
     generator.eval()
     with torch.no_grad():
-      for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths) in enumerate(eval_loader):
+      for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths) in enumerate(tqdm(eval_loader, desc="Eval", ncols=100)):
         # x, x_lengths = x.cuda(0), x_lengths.cuda(0)
         # spec, spec_lengths = spec.cuda(0), spec_lengths.cuda(0)
         # y, y_lengths = y.cuda(0), y_lengths.cuda(0)
@@ -297,20 +319,20 @@ def evaluate(device, hps, generator, eval_loader, writer_eval):
         hps.data.mel_fmin,
         hps.data.mel_fmax
       )
-    image_dict = {
-      "gen/mel": utils.plot_spectrogram_to_numpy(y_hat_mel[0].cpu().numpy())
-    }
+    # image_dict = {
+    #   "gen/mel": utils.plot_spectrogram_to_numpy(y_hat_mel[0].cpu().numpy())
+    # }
     audio_dict = {
       "gen/audio": y_hat[0,:,:y_hat_lengths[0]]
     }
     if global_step == 0:
-      image_dict.update({"gt/mel": utils.plot_spectrogram_to_numpy(mel[0].cpu().numpy())})
+      # image_dict.update({"gt/mel": utils.plot_spectrogram_to_numpy(mel[0].cpu().numpy())})
       audio_dict.update({"gt/audio": y[0,:,:y_lengths[0]]})
 
     utils.summarize(
       writer=writer_eval,
       global_step=global_step, 
-      images=image_dict,
+      # images=image_dict,
       audios=audio_dict,
       audio_sampling_rate=hps.data.sampling_rate
     )
