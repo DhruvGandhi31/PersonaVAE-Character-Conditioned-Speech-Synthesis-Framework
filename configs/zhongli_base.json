@@ -17,8 +17,8 @@
     "c_kl": 1.0
   },
   "data": {
-    "training_files":"data/preprocessed_v1/zhongli_train.txt",
-    "validation_files":"data/preprocessed_v1/zhongli_val.txt",
+    "training_files":"data/clean_v1/zhongli_train.txt",
+    "validation_files":"data/clean_v1/zhongli_val.txt",
     "text_cleaners":["english_cleaners2"],
     "max_wav_value": 32768.0,
     "sampling_rate": 22050,

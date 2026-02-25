@@ -26,6 +26,36 @@ The goal of this project is to experiment with deep learning–based speech gene
 
 ---
 
+
+## Pre-requisites
+0. Python >= 3.6
+0. Clone this repository
+0. Install python requirements. Please refer [requirements.txt](requirements.txt)
+    1. You may need to install espeak first: `apt-get install espeak` (Linux)
+       (For Windows please refer this: [Espeak downloads](https://espeak.sourceforge.net/download.html))
+0. Download datasets
+    1. Download and extract the LJ Speech dataset, then rename or create a link to the dataset folder: `ln -s /path/to/LJSpeech-1.1/wavs DUMMY1`
+    1. For mult-speaker setting, download and extract the VCTK dataset, and downsample wav files to 22050 Hz. Then rename or create a link to the dataset folder: `ln -s /path/to/VCTK-Corpus/downsampled_wavs DUMMY2`
+0. Build Monotonic Alignment Search and run preprocessing if you use your own datasets.
+```sh
+# Cython-version Monotonoic Alignment Search
+cd src/monotonic_align/
+python setup.py build_ext --inplace
+
+# Preprocessing (g2p) for your own datasets. Preprocessed phonemes for LJ Speech and VCTK have been already provided.
+# python preprocess.py --text_index 1 --filelists filelists/ljs_audio_text_train_filelist.txt filelists/ljs_audio_text_val_filelist.txt filelists/ljs_audio_text_test_filelist.txt 
+# python preprocess.py --text_index 2 --filelists filelists/vctk_audio_sid_text_train_filelist.txt filelists/vctk_audio_sid_text_val_filelist.txt filelists/vctk_audio_sid_text_test_filelist.txt
+```
+
+
+## Training
+```sh
+python src/train.py -c configs/zhongli_base.json -m zhongli_base
+```
+
+P.S If you have the training files you can keep them under the dataset folder and update the config accordingly.
+---
+
 ## Acknowledgement
 
 This project references publicly available datasets, including:

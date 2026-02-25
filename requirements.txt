@@ -1,7 +1,7 @@
 huggingface_hub
 datasets
 soundfile
-torch==2.10.0
+torch
 torchcodec==0.10
 librosa
 numpy
