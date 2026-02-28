@@ -11,3 +11,5 @@ src/__pycache__/
 src/monotonic_align/build
 src/monotonic_align/__pycache__
 espeak.exe
+src/monotonic_align/core.c
+src/monotonic_align/core.cp313-win_amd64.pyd
