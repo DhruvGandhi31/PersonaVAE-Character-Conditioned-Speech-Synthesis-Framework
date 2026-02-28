@@ -10,3 +10,4 @@ logs/
 src/__pycache__/
 src/monotonic_align/build
 src/monotonic_align/__pycache__
+espeak.exe
