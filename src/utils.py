@@ -7,6 +7,7 @@ import json
 import subprocess
 import numpy as np
 from scipy.io.wavfile import read
+import re
 import torch
 
 MATPLOTLIB_FLAG = False
@@ -69,9 +70,13 @@ def summarize(writer, global_step, scalars={}, histograms={}, images={}, audios=
 
 def latest_checkpoint_path(dir_path, regex="G_*.pth"):
   f_list = glob.glob(os.path.join(dir_path, regex))
-  f_list.sort(key=lambda f: int("".join(filter(str.isdigit, f))))
+  f_list.sort(
+      key=lambda f: int(
+          re.findall(r'\d+', os.path.basename(f))[0]
+      )
+  )
   x = f_list[-1]
-  print(x)
+  print("Latest checkpoint:", x)
   return x
 
 

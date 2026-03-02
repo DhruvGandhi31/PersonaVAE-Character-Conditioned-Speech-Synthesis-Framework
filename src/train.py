@@ -128,13 +128,46 @@ def run(rank, n_gpus, hps):
   # net_g = DDP(net_g, device_ids=[rank])
   # net_d = DDP(net_d, device_ids=[rank])
 
+  # try:
+  #   _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g, optim_g)
+  #   _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"), net_d, optim_d)
+  #   global_step = (epoch_str - 1) * len(train_loader)
+  # except:
+  #   epoch_str = 1
+  #   global_step = 0
+
+  global_step = 0
+  epoch_str = 1  # default if nothing loads
+
+  # A better way to Load generator checkpoint
   try:
-    _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g, optim_g)
-    _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"), net_d, optim_d)
-    global_step = (epoch_str - 1) * len(train_loader)
-  except:
-    epoch_str = 1
-    global_step = 0
+      g_ckpt_path = utils.latest_checkpoint_path(hps.model_dir, "G_*.pth")
+      _, _, _, epoch_str_g = utils.load_checkpoint(g_ckpt_path, net_g, optim_g)
+      print(f"Loaded Generator checkpoint: {g_ckpt_path} at epoch {epoch_str_g}")
+  except Exception as e:
+      print(f"Could not load Generator checkpoint: {e}")
+      epoch_str_g = 1  # start fresh for generator
+
+  # Load discriminator checkpoint
+  try:
+      d_ckpt_path = utils.latest_checkpoint_path(hps.model_dir, "D_*.pth")
+      _, _, _, epoch_str_d = utils.load_checkpoint(d_ckpt_path, net_d, optim_d)
+      print(f"Loaded Discriminator checkpoint: {d_ckpt_path} at epoch {epoch_str_d}")
+  except Exception as e:
+      print(f"Could not load Discriminator checkpoint: {e}")
+      # Reinitialize D from scratch
+      net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).to(device)
+      optim_d = torch.optim.AdamW(
+          net_d.parameters(),
+          hps.train.learning_rate,
+          betas=hps.train.betas,
+          eps=hps.train.eps
+      )
+      epoch_str_d = epoch_str_g
+
+  epoch_str = max(epoch_str_g, epoch_str_d)
+  global_step = (epoch_str - 1) * len(train_loader)
+  print(f"Starting training from epoch {epoch_str}, global_step {global_step}")
 
   scheduler_g = torch.optim.lr_scheduler.ExponentialLR(optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)
   scheduler_d = torch.optim.lr_scheduler.ExponentialLR(optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)

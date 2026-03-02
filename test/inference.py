@@ -1,4 +1,4 @@
-# inference script for Zhongli-TTS (NEED TO MAKE CHANGES TO RUN INFERENCE)
+# inference script for Zhongli-TTS
 
 import os
 import sys
@@ -17,12 +17,13 @@ import soundfile as sf
 from src.models import SynthesizerTrn
 from src.txt_clean.symbols import symbols
 from src.txt_clean import text_to_sequence
+from src.txt_clean import _clean_text  # <-- import internal cleaner for debugging
 
 
 # CONFIG
 config_path = "configs/zhongli_base.json"
-checkpoint_path = "logs/zhongli_base/G_55.pth"  # <-- replace with latest checkpoint
-text_input = "I will have order. Have you ever been to the restaurant? I want to eat something delicious."  # <-- replace with your input text
+checkpoint_path = "logs/zhongli_base/G_15000.pth"
+text_input = "Hello, how are you? It is indeed a pleasure to meet you. I will have order."
 output_wav = "zhongli_output.wav"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,9 +31,23 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # TEXT PROCESSING
 def get_text(text, hps):
+    print("\n===== TEXT DEBUG =====")
+    print("Original text:", text)
+
+    # Step 1: Clean + phonemize (what phonemizer outputs)
+    cleaned = _clean_text(text, hps.data.text_cleaners)
+    print("After cleaners / phonemizer:", cleaned)
+
+    # Step 2: Convert to symbol IDs
     text_norm = text_to_sequence(text, hps.data.text_cleaners)
+    print("Token IDs:", text_norm)
+    print("Token length:", len(text_norm))
+
     if hps.data.add_blank:
         text_norm = commons.intersperse(text_norm, 0)
+
+    print("======================\n")
+
     return torch.LongTensor(text_norm)
 
 
@@ -66,9 +81,9 @@ with torch.no_grad():
     audio = net_g.infer(
         x_tst,
         x_tst_lengths,
-        noise_scale=0.667,     # controls voice variation
-        noise_scale_w=0.8,     # controls stochastic duration
-        length_scale=1.0       # >1.0 slower speech, <1.0 faster
+        noise_scale=0.667,
+        noise_scale_w=0.8,
+        length_scale=1.0
     )[0][0, 0].data.cpu().float().numpy()
 
 
