@@ -54,7 +54,20 @@ python src/train.py -c configs/zhongli_base.json -m zhongli_base
 ```
 
 P.S If you have the training files you can keep them under the dataset folder and update the config accordingly.
+
+Note: Although one can technically train the network on their local machine but it is very slow, it is recommended to train on HPC, GPUs clusters or cloud envs. 
 ---
+
+## Testing
+Just type the sentence you want to convert to speech in the input_text field.
+```sh
+python test/inference.py
+```
+
+## Future Enhancements
+1. A user-friendly GUI in which one can easily upload the training files, train the network and even test the output.
+2. Add more languages (phonemizers and dedicated text cleaners)
+3. Optimize the current model
 
 ## Acknowledgement
 
