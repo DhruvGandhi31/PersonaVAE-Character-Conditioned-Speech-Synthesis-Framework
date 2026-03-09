@@ -64,6 +64,9 @@ Just type the sentence you want to convert to speech in the input_text field.
 python test/inference.py
 ```
 
+## Output
+
+
 ## Future Enhancements
 1. A user-friendly GUI in which one can easily upload the training files, train the network and even test the output.
 2. Add more languages (phonemizers and dedicated text cleaners)
