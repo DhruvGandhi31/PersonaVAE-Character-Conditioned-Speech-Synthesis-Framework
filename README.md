@@ -64,12 +64,7 @@ Just type the sentence you want to convert to speech in the input_text field.
 python test/inference.py
 ```
 
-## Output
-
-
 ## 🎧 Voice Comparison
-
-## 🔊 Zhongli Voice Demo
 
 ### Original Voice
 [▶️ Listen](https://github.com/DhruvGandhi31/PersonaVAE-Character-Conditioned-Speech-Synthesis-Framework/raw/main/output/Zhongli_original_voice.ogg)
