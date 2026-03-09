@@ -22,8 +22,8 @@ from src.txt_clean import _clean_text  # <-- import internal cleaner for debuggi
 
 # CONFIG
 config_path = "configs/zhongli_base.json"
-checkpoint_path = "logs/zhongli_base/G_55000.pth"
-text_input = "Hello, how are you? It is indeed a pleasure to meet you. I hope you have a wonderful day!" 
+checkpoint_path = "logs/zhongli_base/G_145000.pth"
+text_input = """Osmanthus wine tastes the same as I remember... But where are those who share the memory?"""
 output_wav = "zhongli_output.wav"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

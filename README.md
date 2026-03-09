@@ -55,7 +55,7 @@ python src/train.py -c configs/zhongli_base.json -m zhongli_base
 
 P.S If you have the training files you can keep them under the dataset folder and update the config accordingly.
 
-Note: Although one can technically train the network on their local machine but it is very slow, it is recommended to train on HPC, GPUs clusters or cloud envs. 
+### Note: Although one can technically train the network on their local machine but it is very slow, it is recommended to train on HPC, GPUs clusters or cloud envs. 
 ---
 
 ## Testing
