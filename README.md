@@ -66,6 +66,11 @@ python test/inference.py
 
 ## Output
 
+[Original Voice](output/Zhongli_original_voice.ogg)
+
+[Model Generated Voice](output/zhongli_output.wav)
+
+**Please Note: Training of the TTS model is not yet completed. (3233/20000)
 
 ## Future Enhancements
 1. A user-friendly GUI in which one can easily upload the training files, train the network and even test the output.
