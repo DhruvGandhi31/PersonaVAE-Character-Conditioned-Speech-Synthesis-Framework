@@ -67,11 +67,12 @@ python test/inference.py
 ## Output
 
 
-### Original Voice
-[▶️ Play Audio](output/Zhongli_original_voice.ogg)
+## 🎧 Voice Comparison
 
-### Model Generated Voice
-[▶️ Play Audio](output/zhongli_output.wav)
+| Type | Audio |
+|-----|------|
+| Original Voice | [▶️ Listen](./output/Zhongli_original_voice.ogg) |
+| Generated Voice | [▶️ Listen](./output/zhongli_output.wav) |
 
 
 **Please Note**: Training of the TTS model is not yet completed. (3233/20000)
