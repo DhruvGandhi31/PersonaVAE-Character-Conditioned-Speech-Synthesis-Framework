@@ -69,10 +69,13 @@ python test/inference.py
 
 ## 🎧 Voice Comparison
 
-| Type | Audio |
-|-----|------|
-| Original Voice | [▶️ Listen](./output/Zhongli_original_voice.ogg) |
-| Generated Voice | [▶️ Listen](./output/zhongli_output.wav) |
+## 🔊 Zhongli Voice Demo
+
+### Original Voice
+[▶️ Listen](https://github.com/DhruvGandhi31/PersonaVAE-Character-Conditioned-Speech-Synthesis-Framework/raw/main/output/Zhongli_original_voice.ogg)
+
+### Model Generated Voice
+[▶️ Listen](https://github.com/DhruvGandhi31/PersonaVAE-Character-Conditioned-Speech-Synthesis-Framework/raw/main/output/zhongli_output.wav)
 
 
 **Please Note**: Training of the TTS model is not yet completed. (3233/20000)
